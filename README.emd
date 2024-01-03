@@ -1,0 +1,165 @@
+To implement this project، Java and the antlr parser are used inside it.
+First, a 4G file representing the problem grammar is designed that the following grammar is:
+grammar Narwhal;
+prog: ( (stat | function)? (NEWLINE) )*
+ ;
+block: ( stat? NEWLINE )*
+ ;
+stat: PRINT value #print
+ | ID '=' value #assign
+ | ID '=' expression #exprAssign
+ | READINT ID #readInt
+ | READREAL ID #readReal
+ | ID '()' #call
+ | IF equal '{' blockif '}' #if
+ | REPEAT repetitions '{' block '}' #repeat
+ ;
+value: ID
+ | STRING
+ | INT
+ | REAL
+ ;
+expression: term ( ( add | sub ) term )*
+ ;
+term: factor ( ( mul | div ) factor )*
+ ;
+factor: lp expression rp #ex
+ | INT #int
+ | REAL #real
+ | ID #id
+ ;
+lp: '('
+ ;
+rp: ')'
+ ;
+add: '+'
+ ;
+sub: '-'
+ ;
+mul: '*'
+ ;
+div: '/'
+ ;
+function: FUNCTION ID '()' '{' block '}'
+ ;
+equal: ID '==' INT
+ ;
+blockif: block
+ ;
+repetitions: ID
+ ;
+REPEAT: 'repeat'
+ ;
+IF: 'if'
+ ;
+FUNCTION: 'func'
+ ;
+READREAL: 'readReal'
+ ;
+READINT: 'readInt'
+ ;
+PRINT: 'print'
+ ;
+STRING: '"' ( ~('\\'|'"') )* '"'
+ ;
+ID: ('a'..'z'|'A'..'Z')+
+ ;
+INT: '0'..'9'+
+ ;
+REAL: '0'..'9'+'.''0'..'9'+
+ ;
+NEWLINE: '\r'? '\n'
+ ;
+WS: (' '|'\t')+ { skip(); }
+ ;
+This grammar has the ability to recognize numbers، letters، words، gems، addresses، important codes such as zip codes، etc. 
+This grammar also has the ability to recognize decimal numbers, integers, etc. 
+The way to write this grammar is to first all the requirements including numbers, letters, words, etc. 
+They should be defined, for example, integers are defined as follows:INT: '0'..'9'+
+After defining all the requirements، you need to add this 4G file inside the project so that the program can use it to produce and 
+Use text recognition.
+After adding the file to the project, the file must be written in the Java programming language that can receive the text and 
+Using those necessary items such as zip code، email، and number، etc. Recognize it.
+
+For example، in this part of the program، text is received and ready for diagnosis:
+
+private String getValue(Value value, boolean isMathExpr) {
+ if (isMathExpr) {
+return value.content;
+ }
+ if (MathUtils.isNumeric(value.content)) {
+ return value.content;
+ } else {
+ if (value.type == VarType.REAL) {
+ LLVMGenerator.load_double(value.content, 
+globalNames);
+ } else {
+ LLVMGenerator.load_i32(value.content, globalNames);
+ }
+ return "%" + (LLVMGenerator.reg - 1);
+ }
+}
+
+If the text is not valid and cannot be used، this section will be used:
+
+private void error(int line, String msg) {
+ System.err.println("Error, line " + line + ", " + msg);
+ System.exit(1);
+}
+
+The codes for diagnosis are now implemented in this section
+
+private static void formatMainText() {
+ String[] lines = main_text.split("\n");
+ StringBuilder sb = new StringBuilder();
+ for (String line : lines) {
+ sb.append(" ").append(line).append("\n");
+ }
+ main_text = sb.toString();
+}
+
+
+This code snippet clears the extra spaces inside the lines.
+
+
+
+
+
+
+static void repeat_end() {
+ int b = br_stack.pop();
+ buffer += "br label %cond" + b + "\n";
+ buffer += "false" + b + ":\n";
+}
+
+This snippet recognizes the decimal number code.
+
+private static boolean isInteger(String s) {
+ try {
+ Integer.parseInt(s);
+ } catch (Exception e) {
+ return false;
+ }
+ return true;
+}
+
+This piece of code recognizes integer code, mobile number and ... .
+
+
+
+
+static void assign_string(String id, String text, boolean 
+global, String function) {
+ int len = text.length() + 1;
+ String str_type = "[" + len + " x i8]";
+ if (global) {
+ header_text += "@" + id + " = constant" + str_type + " 
+c\"" + text + "\\00\"\n";
+ } else {
+ header_text += "@" + function + "." + id + " = constant" 
++ str_type + " c\"" + text + "\\00\"\n";
+ }
+}
+
+
+This code snippet can recognize addresses ,the words، e-mail، etc.
